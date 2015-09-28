@@ -32,7 +32,7 @@ include $(CLEAR_VARS)
 # "nativepowermanager" would probably be a better name, but Android service
 # names are limited to 16 characters.
 LOCAL_MODULE := nativepowerman
-LOCAL_REQUIRED_MODULES := init.nativepowerman.rc
+LOCAL_REQUIRED_MODULES := nativepowerman.rc
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_CFLAGS := $(nativepowerman_CommonCFlags)
 LOCAL_STATIC_LIBRARIES := libnativepowerman
@@ -46,12 +46,12 @@ LOCAL_SRC_FILES := main.cc
 
 include $(BUILD_EXECUTABLE)
 
-# init.nativepowerman.rc script
+# nativepowerman.rc script
 # ========================================================
 
 ifdef INITRC_TEMPLATE
 include $(CLEAR_VARS)
-LOCAL_MODULE := init.nativepowerman.rc
+LOCAL_MODULE := nativepowerman.rc
 LOCAL_MODULE_CLASS := ETC
 LOCAL_MODULE_PATH := $(PRODUCT_OUT)/$(TARGET_COPY_OUT_INITRCD)
 
