@@ -60,6 +60,10 @@ class PowerManager : public BnPowerManager {
                               const int* uids,
                               bool isOneWay=false) override;
   status_t powerHint(int hintId, int data) override;
+  status_t goToSleep(int64_t event_time_ms, int reason, int flags) override;
+  status_t reboot(bool confirm, const String16& reason, bool wait) override;
+  status_t shutdown(bool confirm, const String16& reason, bool wait) override;
+  status_t crash(const String16& message) override;
 
  private:
   // Helper method for acquireWakeLock*(). Returns true on success.

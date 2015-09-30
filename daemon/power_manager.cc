@@ -78,6 +78,24 @@ status_t PowerManager::powerHint(int hintId, int data) {
   return OK;
 }
 
+status_t PowerManager::goToSleep(int64_t event_time_ms, int reason, int flags) {
+  return OK;
+}
+
+status_t PowerManager::reboot(bool confirm, const String16& reason, bool wait) {
+  return OK;
+}
+
+status_t PowerManager::shutdown(bool confirm,
+                                const String16& reason,
+                                bool wait) {
+  return OK;
+}
+
+status_t PowerManager::crash(const String16& message) {
+  return OK;
+}
+
 bool PowerManager::AddWakeLockRequest(const sp<IBinder>& lock,
                                       const String16& tag,
                                       const String16& packageName,

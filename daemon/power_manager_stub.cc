@@ -97,4 +97,26 @@ status_t PowerManagerStub::powerHint(int hintId, int data) {
   return OK;
 }
 
+status_t PowerManagerStub::goToSleep(int64_t event_time_ms,
+                                     int reason,
+                                     int flags) {
+  return OK;
+}
+
+status_t PowerManagerStub::reboot(bool confirm,
+                                  const String16& reason,
+                                  bool wait) {
+  return OK;
+}
+
+status_t PowerManagerStub::shutdown(bool confirm,
+                                    const String16& reason,
+                                    bool wait) {
+  return OK;
+}
+
+status_t PowerManagerStub::crash(const String16& message) {
+  return OK;
+}
+
 }  // namespace android
