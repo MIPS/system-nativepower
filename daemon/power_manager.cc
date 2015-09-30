@@ -18,6 +18,7 @@
 
 #include <base/logging.h>
 #include <binderwrapper/binder_wrapper.h>
+#include <cutils/android_reboot.h>
 #include <nativepower/constants.h>
 #include <powermanager/IPowerManager.h>
 #include <utils/Errors.h>
@@ -25,11 +26,16 @@
 
 namespace android {
 
+const char PowerManager::kRebootPrefix[] = "reboot,";
+const char PowerManager::kShutdownPrefix[] = "shutdown,";
+
 PowerManager::PowerManager() = default;
 
 PowerManager::~PowerManager() = default;
 
 bool PowerManager::Init() {
+  if (!property_setter_)
+    property_setter_.reset(new SystemPropertySetter());
   if (!wake_lock_manager_) {
     wake_lock_manager_.reset(new WakeLockManager());
     if (!static_cast<WakeLockManager*>(wake_lock_manager_.get())->Init())
@@ -79,20 +85,47 @@ status_t PowerManager::powerHint(int hintId, int data) {
 }
 
 status_t PowerManager::goToSleep(int64_t event_time_ms, int reason, int flags) {
+  NOTIMPLEMENTED() << "goToSleep: event_time_ms=" << event_time_ms
+                   << " reason=" << reason << " flags=" << flags;
   return OK;
 }
 
 status_t PowerManager::reboot(bool confirm, const String16& reason, bool wait) {
+  const std::string reason_str(String8(reason).string());
+  if (!(reason_str.empty() || reason_str == kRebootReasonRecovery)) {
+    LOG(WARNING) << "Ignoring reboot request with invalid reason \""
+                 << reason_str << "\"";
+    return BAD_VALUE;
+  }
+
+  LOG(INFO) << "Rebooting with reason \"" << reason_str << "\"";
+  if (!property_setter_->SetProperty(ANDROID_RB_PROPERTY,
+                                     kRebootPrefix + reason_str)) {
+    return UNKNOWN_ERROR;
+  }
   return OK;
 }
 
 status_t PowerManager::shutdown(bool confirm,
                                 const String16& reason,
                                 bool wait) {
+  const std::string reason_str(String8(reason).string());
+  if (!(reason_str.empty() || reason_str == kShutdownReasonUserRequested)) {
+    LOG(WARNING) << "Ignoring shutdown request with invalid reason \""
+                 << reason_str << "\"";
+    return BAD_VALUE;
+  }
+
+  LOG(INFO) << "Shutting down with reason \"" << reason_str << "\"";
+  if (!property_setter_->SetProperty(ANDROID_RB_PROPERTY,
+                                     kShutdownPrefix + reason_str)) {
+    return UNKNOWN_ERROR;
+  }
   return OK;
 }
 
 status_t PowerManager::crash(const String16& message) {
+  NOTIMPLEMENTED() << "crash: message=" << message;
   return OK;
 }
 

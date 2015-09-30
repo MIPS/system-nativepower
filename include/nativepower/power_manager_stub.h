@@ -16,6 +16,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include <base/macros.h>
 #include <nativepower/BnPowerManager.h>
@@ -35,6 +36,13 @@ class PowerManagerStub : public BnPowerManager {
                                          int uid);
 
   size_t num_locks() const { return locks_.size(); }
+
+  const std::vector<std::string>& reboot_reasons() const {
+    return reboot_reasons_;
+  }
+  const std::vector<std::string>& shutdown_reasons() const {
+    return shutdown_reasons_;
+  }
 
   // Returns a string describing the lock registered for |binder|, or an empty
   // string if no lock is present.
@@ -84,6 +92,11 @@ class PowerManagerStub : public BnPowerManager {
 
   using LockInfoMap = std::map<sp<IBinder>, LockInfo>;
   LockInfoMap locks_;
+
+  // Reasons passed to reboot() and shutdown(), in the order in which they were
+  // received.
+  std::vector<std::string> reboot_reasons_;
+  std::vector<std::string> shutdown_reasons_;
 
   DISALLOW_COPY_AND_ASSIGN(PowerManagerStub);
 };

@@ -17,45 +17,42 @@
 #ifndef SYSTEM_NATIVEPOWER_INCLUDE_NATIVEPOWER_WAKE_LOCK_H_
 #define SYSTEM_NATIVEPOWER_INCLUDE_NATIVEPOWER_WAKE_LOCK_H_
 
-#include <memory>
 #include <string>
 
 #include <base/macros.h>
-#include <powermanager/IPowerManager.h>
 #include <utils/StrongPointer.h>
 
 namespace android {
 
 class IBinder;
+class PowerManagerClient;
 
-// RAII-style object that prevents the system from suspending.
+// RAII-style class that prevents the system from suspending.
 //
-// android::BinderWrapper must be initialized before constructing this class.
+// Instantiate by calling PowerManagerClient::CreateWakeLock().
 class WakeLock {
  public:
-  // Creates and returns a wake lock identified by |tag| and |package|.
-  // An empty pointer is returned on failure (e.g. due to issues communicating
-  // with the power manager).
-  static std::unique_ptr<WakeLock> Create(const std::string& tag,
-                                          const std::string& package);
-
   ~WakeLock();
 
  private:
-  // Called by Create().
-  WakeLock(const std::string& tag, const std::string& package);
+  friend class PowerManagerClient;
 
-  // Initializes the object and returns true on success. Called by Create().
+  // Ownership of |client| remains with the caller.
+  WakeLock(const std::string& tag,
+           const std::string& package,
+           PowerManagerClient* client);
+
+  // Initializes the object and acquires the lock, returning true on success.
   bool Init();
 
-  // Called by |death_recipient_| in response to |power_manager_| dying.
-  void OnPowerManagerDied();
+  // Was a lock successfully acquired from the power manager?
+  bool acquired_lock_;
 
   std::string tag_;
   std::string package_;
 
-  // Interface for communicating with the power manager.
-  sp<IPowerManager> power_manager_;
+  // Weak pointer to the client that created this wake lock.
+  PowerManagerClient* client_;
 
   // Locally-created binder passed to the power manager.
   sp<IBinder> lock_binder_;

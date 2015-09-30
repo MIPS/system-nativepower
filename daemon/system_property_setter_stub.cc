@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-#ifndef SYSTEM_NATIVEPOWER_INCLUDE_NATIVEPOWER_CONSTANTS_H_
-#define SYSTEM_NATIVEPOWER_INCLUDE_NATIVEPOWER_CONSTANTS_H_
+#include "system_property_setter_stub.h"
 
 namespace android {
 
-// Name used to register the power manager with the service manager.
-const char kPowerManagerServiceName[] = "power";
+SystemPropertySetterStub::SystemPropertySetterStub() = default;
 
-// Reasons that can be supplied for reboot or shutdown requests.
-// These strings are hardcoded in system/core/init/builtins.cpp.
-const char kRebootReasonRecovery[] = "recovery";
-const char kShutdownReasonUserRequested[] = "userrequested";
+SystemPropertySetterStub::~SystemPropertySetterStub() = default;
+
+std::string SystemPropertySetterStub::GetProperty(
+    const std::string& key) const {
+  const auto it = properties_.find(key);
+  return it != properties_.end() ? it->second : std::string();
+}
+
+bool SystemPropertySetterStub::SetProperty(const std::string& key,
+                                           const std::string& value) {
+  properties_[key] = value;
+  return true;
+}
 
 }  // namespace android
-
-#endif  // SYSTEM_NATIVEPOWER_INCLUDE_NATIVEPOWER_CONSTANTS_H_

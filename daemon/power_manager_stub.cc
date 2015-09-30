@@ -106,12 +106,14 @@ status_t PowerManagerStub::goToSleep(int64_t event_time_ms,
 status_t PowerManagerStub::reboot(bool confirm,
                                   const String16& reason,
                                   bool wait) {
+  reboot_reasons_.push_back(String8(reason).string());
   return OK;
 }
 
 status_t PowerManagerStub::shutdown(bool confirm,
                                     const String16& reason,
                                     bool wait) {
+  shutdown_reasons_.push_back(String8(reason).string());
   return OK;
 }
 

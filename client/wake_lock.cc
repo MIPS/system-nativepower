@@ -16,30 +16,29 @@
 
 #include <nativepower/wake_lock.h>
 
-#include <base/bind.h>
 #include <base/logging.h>
-#include <binder/IBinder.h>
 #include <binderwrapper/binder_wrapper.h>
-#include <nativepower/constants.h>
+#include <nativepower/power_manager_client.h>
+#include <powermanager/IPowerManager.h>
 #include <powermanager/PowerManager.h>
 
 namespace android {
 
-// static
-std::unique_ptr<WakeLock> WakeLock::Create(const std::string& tag,
-                                           const std::string& package) {
-  std::unique_ptr<WakeLock> lock(new WakeLock(tag, package));
-  if (!lock->Init())
-    lock.reset();
-  return lock;
+WakeLock::WakeLock(const std::string& tag,
+                   const std::string& package,
+                   PowerManagerClient* client)
+    : acquired_lock_(false),
+      tag_(tag),
+      package_(package),
+      client_(client) {
+  DCHECK(client_);
 }
 
 WakeLock::~WakeLock() {
-  if (power_manager_.get()) {
-    BinderWrapper::Get()->UnregisterForDeathNotifications(
-        IInterface::asBinder(power_manager_));
+  sp<IPowerManager> power_manager = client_->power_manager();
+  if (acquired_lock_ && power_manager.get()) {
     status_t status =
-        power_manager_->releaseWakeLock(lock_binder_, 0 /* flags */);
+        power_manager->releaseWakeLock(lock_binder_, 0 /* flags */);
     if (status != OK) {
       LOG(ERROR) << "Wake lock release request for \"" << tag_ << "\" failed "
                  << "with status " << status;
@@ -47,40 +46,26 @@ WakeLock::~WakeLock() {
   }
 }
 
-WakeLock::WakeLock(const std::string& tag, const std::string& package)
-    : tag_(tag),
-      package_(package) {}
-
 bool WakeLock::Init() {
-  sp<IBinder> power_manager_binder =
-      BinderWrapper::Get()->GetService(kPowerManagerServiceName);
-  if (!power_manager_binder.get()) {
-    LOG(ERROR) << "Didn't get " << kPowerManagerServiceName << " service";
+  sp<IPowerManager> power_manager = client_->power_manager();
+  if (!power_manager.get()) {
+    LOG(ERROR) << "Can't acquire wake lock for \"" << tag_ << "\"; no "
+               << "connection to power manager";
     return false;
   }
 
-  power_manager_ = interface_cast<IPowerManager>(power_manager_binder);
-  BinderWrapper::Get()->RegisterForDeathNotifications(
-      power_manager_binder,
-      base::Bind(&WakeLock::OnPowerManagerDied, base::Unretained(this)));
-
   lock_binder_ = BinderWrapper::Get()->CreateLocalBinder();
-  status_t status = power_manager_->acquireWakeLock(
+  status_t status = power_manager->acquireWakeLock(
       POWERMANAGER_PARTIAL_WAKE_LOCK,
       lock_binder_, String16(tag_.c_str()), String16(package_.c_str()));
   if (status != OK) {
-    LOG(ERROR) << "Wake lock acquire request for tag \"" << tag_ << "\" failed "
+    LOG(ERROR) << "Wake lock acquire request for \"" << tag_ << "\" failed "
                << "with status " << status;
-    power_manager_.clear();
     return false;
   }
 
+  acquired_lock_ = true;
   return true;
-}
-
-void WakeLock::OnPowerManagerDied() {
-  LOG(WARNING) << "Power manager died; lost wake lock for \"" << tag_ << "\"";
-  power_manager_.clear();
 }
 
 }  // namespace android

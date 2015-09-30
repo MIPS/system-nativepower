@@ -14,31 +14,26 @@
  * limitations under the License.
  */
 
-#include <memory>
-
 #include <base/logging.h>
 #include <base/macros.h>
-#include <binder/Binder.h>
-#include <binder/IBinder.h>
 #include <binderwrapper/binder_test_base.h>
 #include <binderwrapper/stub_binder_wrapper.h>
 #include <nativepower/constants.h>
 #include <nativepower/power_manager_client.h>
 #include <nativepower/power_manager_stub.h>
-#include <nativepower/wake_lock.h>
 
 namespace android {
 
-class WakeLockTest : public BinderTestBase {
+class PowerManagerClientTest : public BinderTestBase {
  public:
-  WakeLockTest()
+  PowerManagerClientTest()
       : power_manager_(new PowerManagerStub()),
         power_manager_binder_(power_manager_) {
     binder_wrapper()->SetBinderForService(kPowerManagerServiceName,
                                           power_manager_binder_);
     CHECK(client_.Init());
   }
-  ~WakeLockTest() override = default;
+  ~PowerManagerClientTest() override = default;
 
  protected:
   PowerManagerStub* power_manager_;  // Owned by |power_manager_binder_|.
@@ -46,29 +41,28 @@ class WakeLockTest : public BinderTestBase {
   PowerManagerClient client_;
 
  private:
-  DISALLOW_COPY_AND_ASSIGN(WakeLockTest);
+  DISALLOW_COPY_AND_ASSIGN(PowerManagerClientTest);
 };
 
-TEST_F(WakeLockTest, CreateAndDestroy) {
-  std::unique_ptr<WakeLock> lock(client_.CreateWakeLock("foo", "bar"));
-  ASSERT_EQ(1u, power_manager_->num_locks());
-  ASSERT_EQ(1u, binder_wrapper()->local_binders().size());
-  EXPECT_EQ(
-      PowerManagerStub::ConstructLockString("foo", "bar", -1),
-      power_manager_->GetLockString(binder_wrapper()->local_binders()[0]));
+TEST_F(PowerManagerClientTest, ShutDown) {
+  EXPECT_TRUE(client_.ShutDown(ShutdownReason::DEFAULT));
+  ASSERT_EQ(1u, power_manager_->shutdown_reasons().size());
+  EXPECT_EQ("", power_manager_->shutdown_reasons()[0]);
 
-  lock.reset();
-  EXPECT_EQ(0u, power_manager_->num_locks());
+  EXPECT_TRUE(client_.ShutDown(ShutdownReason::USER_REQUESTED));
+  ASSERT_EQ(2u, power_manager_->shutdown_reasons().size());
+  EXPECT_EQ(kShutdownReasonUserRequested,
+            power_manager_->shutdown_reasons()[1]);
 }
 
-TEST_F(WakeLockTest, PowerManagerDeath) {
-  std::unique_ptr<WakeLock> lock(client_.CreateWakeLock("foo", "bar"));
-  binder_wrapper()->NotifyAboutBinderDeath(power_manager_binder_);
+TEST_F(PowerManagerClientTest, Reboot) {
+  EXPECT_TRUE(client_.Reboot(RebootReason::DEFAULT));
+  ASSERT_EQ(1u, power_manager_->reboot_reasons().size());
+  EXPECT_EQ("", power_manager_->reboot_reasons()[0]);
 
-  // Since PowerManagerClient was informed that the power manager died, WakeLock
-  // shouldn't try to release its lock on destruction.
-  lock.reset();
-  EXPECT_EQ(1u, power_manager_->num_locks());
+  EXPECT_TRUE(client_.Reboot(RebootReason::RECOVERY));
+  ASSERT_EQ(2u, power_manager_->reboot_reasons().size());
+  EXPECT_EQ(kRebootReasonRecovery, power_manager_->reboot_reasons()[1]);
 }
 
 }  // namespace android

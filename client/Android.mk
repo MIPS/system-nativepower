@@ -38,6 +38,7 @@ LOCAL_C_INCLUDES := $(libnativepower_CommonCIncludes)
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/../include
 LOCAL_SHARED_LIBRARIES := $(libnativepower_CommonSharedLibraries)
 LOCAL_SRC_FILES := \
+  power_manager_client.cc \
   wake_lock.cc \
 
 include $(BUILD_SHARED_LIBRARY)
@@ -58,6 +59,7 @@ LOCAL_SHARED_LIBRARIES := \
   libnativepower_test_support \
 
 LOCAL_SRC_FILES := \
+  power_manager_client_unittest.cc \
   wake_lock_unittest.cc \
 
 include $(BUILD_NATIVE_TEST)

@@ -22,14 +22,27 @@
 #include <base/macros.h>
 #include <nativepower/BnPowerManager.h>
 
+#include "system_property_setter.h"
 #include "wake_lock_manager.h"
 
 namespace android {
 
 class PowerManager : public BnPowerManager {
  public:
+  // The part of the reboot or shutdown system properties' values that appears
+  // before the reason. These strings are hardcoded in
+  // system/core/init/builtins.cpp.
+  static const char kRebootPrefix[];
+  static const char kShutdownPrefix[];
+
   PowerManager();
   ~PowerManager() override;
+
+  // Must be called before Init().
+  void set_property_setter_for_testing(
+      std::unique_ptr<SystemPropertySetterInterface> setter) {
+    property_setter_ = std::move(setter);
+  }
 
   // Must be called before Init().
   void set_wake_lock_manager_for_testing(
@@ -72,6 +85,7 @@ class PowerManager : public BnPowerManager {
                           const String16& packageName,
                           int uid);
 
+  std::unique_ptr<SystemPropertySetterInterface> property_setter_;
   std::unique_ptr<WakeLockManagerInterface> wake_lock_manager_;
 
   DISALLOW_COPY_AND_ASSIGN(PowerManager);

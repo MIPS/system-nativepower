@@ -22,6 +22,7 @@ nativepowerman_CommonCIncludes := $(LOCAL_PATH)/../include
 nativepowerman_CommonSharedLibraries := \
   libbinder \
   libchrome \
+  libcutils \
   libpowermanager \
   libutils \
 
@@ -78,6 +79,7 @@ LOCAL_SHARED_LIBRARIES := \
 LOCAL_SRC_FILES := \
   BnPowerManager.cc \
   power_manager.cc \
+  system_property_setter.cc \
   wake_lock_manager.cc \
 
 include $(BUILD_STATIC_LIBRARY)
@@ -97,6 +99,7 @@ LOCAL_SHARED_LIBRARIES := \
 
 LOCAL_SRC_FILES := \
   power_manager_unittest.cc \
+  system_property_setter_stub.cc \
   wake_lock_manager_stub.cc \
   wake_lock_manager_unittest.cc \
 

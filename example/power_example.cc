@@ -23,25 +23,45 @@
 #include <base/message_loop/message_loop.h>
 #include <binderwrapper/binder_wrapper.h>
 #include <chromeos/flag_helper.h>
+#include <nativepower/power_manager_client.h>
 #include <nativepower/wake_lock.h>
 
-using android::BinderWrapper;
-using android::WakeLock;
+namespace {
+
+// Seconds to sleep after acquiring a wake lock.
+const int kWakeLockSleepSec = 5;
+
+}  // namespace
 
 int main(int argc, char *argv[]) {
-  DEFINE_int32(sleep_sec, 5, "Number of seconds to sleep");
+  DEFINE_string(action, "",
+                "Action to perform (\"reboot\", \"shut_down\", \"wake_lock\")");
 
   chromeos::FlagHelper::Init(argc, argv, "Example power-management client.");
   logging::InitLogging(logging::LoggingSettings());
   base::AtExitManager at_exit;
   base::MessageLoopForIO loop;
-  BinderWrapper::Create();
+  android::BinderWrapper::Create();
 
-  LOG(INFO) << "Creating wake lock";
-  std::unique_ptr<WakeLock> lock(WakeLock::Create("power_example", "power"));
+  android::PowerManagerClient client;
+  CHECK(client.Init());
 
-  LOG(INFO) << "Sleeping for " << FLAGS_sleep_sec << " seconds";
-  sleep(FLAGS_sleep_sec);
+  if (FLAGS_action == "reboot") {
+    LOG(INFO) << "Requesting reboot";
+    CHECK(client.Reboot(android::RebootReason::DEFAULT));
+  } else if (FLAGS_action == "shut_down") {
+    LOG(INFO) << "Requesting shutdown";
+    CHECK(client.ShutDown(android::ShutdownReason::DEFAULT));
+  } else if (FLAGS_action == "wake_lock") {
+    LOG(INFO) << "Creating wake lock";
+    std::unique_ptr<android::WakeLock> lock(
+        client.CreateWakeLock("power_example", "power"));
+    CHECK(lock) << "Lock not created";
+    LOG(INFO) << "Sleeping for " << kWakeLockSleepSec << " seconds";
+    sleep(kWakeLockSleepSec);
+  } else {
+    LOG(FATAL) << "Unknown action \"" << FLAGS_action << "\"";
+  }
 
   LOG(INFO) << "Exiting";
   return 0;

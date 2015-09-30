@@ -64,6 +64,32 @@ status_t BnPowerManager::onTransact(uint32_t code,
       int32_t params = data.readInt32();
       return powerHint(hint_id, params);
     }
+    case IPowerManager::GO_TO_SLEEP: {
+      CHECK_INTERFACE(IPowerManager, data, reply);
+      int64_t event_time_ms = data.readInt64();
+      int32_t reason = data.readInt32();
+      int32_t flags = data.readInt32();
+      return goToSleep(event_time_ms, reason, flags);
+    }
+    case IPowerManager::REBOOT: {
+      CHECK_INTERFACE(IPowerManager, data, reply);
+      bool confirm = data.readInt32();
+      String16 reason = data.readString16();
+      bool wait = data.readInt32();
+      return reboot(confirm, reason, wait);
+    }
+    case IPowerManager::SHUTDOWN: {
+      CHECK_INTERFACE(IPowerManager, data, reply);
+      bool confirm = data.readInt32();
+      String16 reason = data.readString16();
+      bool wait = data.readInt32();
+      return shutdown(confirm, reason, wait);
+    }
+    case IPowerManager::CRASH: {
+      CHECK_INTERFACE(IPowerManager, data, reply);
+      String16 message = data.readString16();
+      return crash(message);
+    }
     default:
       return BBinder::onTransact(code, data, reply, flags);
   }
