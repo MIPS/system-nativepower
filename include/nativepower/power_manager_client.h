@@ -18,11 +18,29 @@
 
 #include <base/macros.h>
 #include <base/memory/weak_ptr.h>
+#include <base/time/time.h>
 #include <nativepower/wake_lock.h>
 #include <powermanager/IPowerManager.h>
 #include <utils/StrongPointer.h>
 
 namespace android {
+
+// Reasons that can be passed to PowerManagerClient::Suspend().
+enum class SuspendReason {
+  // These values must match the ones in android.os.PowerManager.
+  APPLICATION  = 0,
+  DEVICE_ADMIN = 1,
+  TIMEOUT      = 2,
+  LID_SWITCH   = 3,
+  POWER_BUTTON = 4,
+  HDMI         = 5,
+  SLEEP_BUTTON = 6,
+};
+
+enum class SuspendFlags {
+  // Corresponds to GO_TO_SLEEP_FLAG_NO_DOZE in android.os.PowerManager.
+  NO_DOZE = 1 << 0,
+};
 
 // Reasons that can be passed to PowerManagerClient::ShutDown().
 enum class ShutdownReason {
@@ -58,7 +76,18 @@ class PowerManagerClient {
   std::unique_ptr<WakeLock> CreateWakeLock(const std::string& tag,
                                            const std::string& package);
 
-  // Shuts down or reboots the system.
+  // Suspends the system immediately, returning true on success.
+  //
+  // |event_uptime| contains the time since the system was booted (e.g.
+  // base::TimeDelta::FromMilliseconds(base::SysInfo::Uptime())) of the event
+  // that triggered the suspend request. It is used to avoid acting on stale
+  // suspend requests that are sent before the currently-active suspend request
+  // completes.
+  // |reason| is currently only used by android.view.WindowManagerPolicy.
+  // |flags| is a bitfield of SuspendFlag values.
+  bool Suspend(base::TimeDelta event_uptime, SuspendReason reason, int flags);
+
+  // Shuts down or reboots the system, returning true on success.
   bool ShutDown(ShutdownReason reason);
   bool Reboot(RebootReason reason);
 

@@ -93,6 +93,19 @@ std::unique_ptr<WakeLock> PowerManagerClient::CreateWakeLock(
   return lock;
 }
 
+bool PowerManagerClient::Suspend(base::TimeDelta event_uptime,
+                                 SuspendReason reason,
+                                 int flags) {
+  DCHECK(power_manager_.get());
+  status_t status = power_manager_->goToSleep(
+      event_uptime.InMilliseconds(), static_cast<int>(reason), flags);
+  if (status != OK) {
+    LOG(ERROR) << "Suspend request failed with status " << status;
+    return false;
+  }
+  return true;
+}
+
 bool PowerManagerClient::ShutDown(ShutdownReason reason) {
   DCHECK(power_manager_.get());
   status_t status = power_manager_->shutdown(false /* confirm */,

@@ -19,7 +19,9 @@
 
 #include <memory>
 
+#include <base/files/file_path.h>
 #include <base/macros.h>
+#include <base/time/time.h>
 #include <nativepower/BnPowerManager.h>
 
 #include "system_property_setter.h"
@@ -35,6 +37,9 @@ class PowerManager : public BnPowerManager {
   static const char kRebootPrefix[];
   static const char kShutdownPrefix[];
 
+  // Value written to |power_state_path_| to suspend the system to memory.
+  static const char kPowerStateSuspend[];
+
   PowerManager();
   ~PowerManager() override;
 
@@ -48,6 +53,10 @@ class PowerManager : public BnPowerManager {
   void set_wake_lock_manager_for_testing(
       std::unique_ptr<WakeLockManagerInterface> manager) {
     wake_lock_manager_ = std::move(manager);
+  }
+
+  void set_power_state_path_for_testing(const base::FilePath& path) {
+    power_state_path_ = path;
   }
 
   // Initializes the object, returning true on success.
@@ -87,6 +96,13 @@ class PowerManager : public BnPowerManager {
 
   std::unique_ptr<SystemPropertySetterInterface> property_setter_;
   std::unique_ptr<WakeLockManagerInterface> wake_lock_manager_;
+
+  // Path to sysfs file that can be written to change the power state.
+  base::FilePath power_state_path_;
+
+  // System uptime (as duration since boot) when userspace was last resumed from
+  // suspend. Initially unset.
+  base::TimeDelta last_resume_uptime_;
 
   DISALLOW_COPY_AND_ASSIGN(PowerManager);
 };

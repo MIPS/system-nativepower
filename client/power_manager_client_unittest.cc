@@ -16,6 +16,7 @@
 
 #include <base/logging.h>
 #include <base/macros.h>
+#include <base/time/time.h>
 #include <binderwrapper/binder_test_base.h>
 #include <binderwrapper/stub_binder_wrapper.h>
 #include <nativepower/constants.h>
@@ -43,6 +44,19 @@ class PowerManagerClientTest : public BinderTestBase {
  private:
   DISALLOW_COPY_AND_ASSIGN(PowerManagerClientTest);
 };
+
+TEST_F(PowerManagerClientTest, Suspend) {
+  EXPECT_EQ(0, power_manager_->num_suspend_requests());
+
+  const auto kEventTime = base::TimeDelta::FromMilliseconds(123);
+  const int kFlags = 0x456;
+  EXPECT_TRUE(client_.Suspend(kEventTime, SuspendReason::POWER_BUTTON, kFlags));
+  EXPECT_EQ(1, power_manager_->num_suspend_requests());
+  EXPECT_EQ(PowerManagerStub::ConstructSuspendRequestString(
+                kEventTime.InMilliseconds(),
+                static_cast<int>(SuspendReason::POWER_BUTTON), kFlags),
+            power_manager_->GetSuspendRequestString(0));
+}
 
 TEST_F(PowerManagerClientTest, ShutDown) {
   EXPECT_TRUE(client_.ShutDown(ShutdownReason::DEFAULT));

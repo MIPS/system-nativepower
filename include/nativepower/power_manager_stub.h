@@ -35,8 +35,14 @@ class PowerManagerStub : public BnPowerManager {
                                          const std::string& package,
                                          int uid);
 
-  size_t num_locks() const { return locks_.size(); }
+  // Constructs a string that can be compared with one returned by
+  // GetSuspendRequestString().
+  static std::string ConstructSuspendRequestString(int64_t event_time_ms,
+                                                   int reason,
+                                                   int flags);
 
+  size_t num_locks() const { return locks_.size(); }
+  size_t num_suspend_requests() const { return suspend_requests_.size(); }
   const std::vector<std::string>& reboot_reasons() const {
     return reboot_reasons_;
   }
@@ -47,6 +53,9 @@ class PowerManagerStub : public BnPowerManager {
   // Returns a string describing the lock registered for |binder|, or an empty
   // string if no lock is present.
   std::string GetLockString(const sp<IBinder>& binder) const;
+
+  // Returns a string describing position |index| in |suspend_requests_|.
+  std::string GetSuspendRequestString(size_t index) const;
 
   // BnPowerManager:
   status_t acquireWakeLock(int flags,
@@ -90,8 +99,21 @@ class PowerManagerStub : public BnPowerManager {
     int uid;
   };
 
+  // Details about a request passed to goToSleep().
+  struct SuspendRequest {
+    SuspendRequest(int64 uptime_ms, int reason, int flags);
+
+    int64 event_time_ms;
+    int reason;
+    int flags;
+  };
+
   using LockInfoMap = std::map<sp<IBinder>, LockInfo>;
   LockInfoMap locks_;
+
+  // Information about calls to goToSleep(), in the order they were made.
+  using SuspendRequests = std::vector<SuspendRequest>;
+  SuspendRequests suspend_requests_;
 
   // Reasons passed to reboot() and shutdown(), in the order in which they were
   // received.

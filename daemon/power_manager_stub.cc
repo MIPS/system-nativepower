@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <base/format_macros.h>
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
 #include <nativepower/power_manager_stub.h>
@@ -32,11 +33,26 @@ PowerManagerStub::LockInfo::LockInfo(const std::string& tag,
       package(package),
       uid(uid) {}
 
+PowerManagerStub::SuspendRequest::SuspendRequest(int64_t event_time_ms,
+                                                 int reason,
+                                                 int flags)
+    : event_time_ms(event_time_ms),
+      reason(reason),
+      flags(flags) {}
+
 // static
 std::string PowerManagerStub::ConstructLockString(const std::string& tag,
                                                   const std::string& package,
                                                   int uid) {
   return base::StringPrintf("%s,%s,%d", tag.c_str(), package.c_str(), uid);
+}
+
+// static
+std::string PowerManagerStub::ConstructSuspendRequestString(
+    int64_t event_time_ms,
+    int reason,
+    int flags) {
+  return base::StringPrintf("%" PRId64 ",%d,%d", event_time_ms, reason, flags);
 }
 
 PowerManagerStub::PowerManagerStub() = default;
@@ -50,6 +66,15 @@ std::string PowerManagerStub::GetLockString(const sp<IBinder>& binder) const {
 
   const LockInfo& info = it->second;
   return ConstructLockString(info.tag, info.package, info.uid);
+}
+
+std::string PowerManagerStub::GetSuspendRequestString(size_t index) const {
+  if (index >= suspend_requests_.size())
+    return std::string();
+
+  const SuspendRequest& request = suspend_requests_[index];
+  return ConstructSuspendRequestString(request.event_time_ms, request.reason,
+                                       request.flags);
 }
 
 status_t PowerManagerStub::acquireWakeLock(int flags,
@@ -100,6 +125,7 @@ status_t PowerManagerStub::powerHint(int hintId, int data) {
 status_t PowerManagerStub::goToSleep(int64_t event_time_ms,
                                      int reason,
                                      int flags) {
+  suspend_requests_.emplace_back(event_time_ms, reason, flags);
   return OK;
 }
 
