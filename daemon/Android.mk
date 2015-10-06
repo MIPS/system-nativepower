@@ -89,6 +89,9 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := nativepowerman_tests
+ifdef BRILLO
+  LOCAL_MODULE_TAGS := debug
+endif
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_CFLAGS := $(nativepowerman_CommonCFlags)
 LOCAL_STATIC_LIBRARIES := libnativepowerman libgtest libBionicGtestMain
