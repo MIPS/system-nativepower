@@ -19,23 +19,23 @@
 #include <base/logging.h>
 #include <base/macros.h>
 #include <binderwrapper/binder_wrapper.h>
-#include <chromeos/binder_watcher.h>
-#include <chromeos/daemons/daemon.h>
-#include <chromeos/flag_helper.h>
+#include <brillo/binder_watcher.h>
+#include <brillo/daemons/daemon.h>
+#include <brillo/flag_helper.h>
 
 #include "power_manager.h"
 
 namespace {
 
-class PowerManagerDaemon : public chromeos::Daemon {
+class PowerManagerDaemon : public brillo::Daemon {
  public:
   PowerManagerDaemon() = default;
   ~PowerManagerDaemon() override = default;
 
  private:
-  // chromeos::Daemon:
+  // brillo::Daemon:
   int OnInit() override {
-    int result = chromeos::Daemon::OnInit();
+    int result = brillo::Daemon::OnInit();
     if (result != EX_OK)
       return result;
 
@@ -49,7 +49,7 @@ class PowerManagerDaemon : public chromeos::Daemon {
     return EX_OK;
   }
 
-  chromeos::BinderWatcher binder_watcher_;
+  brillo::BinderWatcher binder_watcher_;
   android::PowerManager power_manager_;
 
   DISALLOW_COPY_AND_ASSIGN(PowerManagerDaemon);
@@ -59,7 +59,7 @@ class PowerManagerDaemon : public chromeos::Daemon {
 
 int main(int argc, char *argv[]) {
   // This also initializes base::CommandLine(), which is needed for logging.
-  chromeos::FlagHelper::Init(argc, argv, "Power management daemon");
+  brillo::FlagHelper::Init(argc, argv, "Power management daemon");
   logging::InitLogging(logging::LoggingSettings());
   return PowerManagerDaemon().Run();
 }

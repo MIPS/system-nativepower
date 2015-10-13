@@ -24,7 +24,7 @@
 #include <base/sys_info.h>
 #include <base/time/time.h>
 #include <binderwrapper/binder_wrapper.h>
-#include <chromeos/flag_helper.h>
+#include <brillo/flag_helper.h>
 #include <nativepower/power_manager_client.h>
 #include <nativepower/wake_lock.h>
 
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
                 "Action to perform (\"reboot\", \"shut_down\", \"suspend\", "
                 "\"wake_lock\")");
 
-  chromeos::FlagHelper::Init(argc, argv, "Example power-management client.");
+  brillo::FlagHelper::Init(argc, argv, "Example power-management client.");
   logging::InitLogging(logging::LoggingSettings());
   base::AtExitManager at_exit;
   base::MessageLoopForIO loop;
