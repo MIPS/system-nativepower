@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+#include <base/files/file_util.h>
+#include <base/files/scoped_temp_dir.h>
 #include <base/macros.h>
+#include <base/sys_info.h>
 #include <binder/IBinder.h>
 #include <binder/IInterface.h>
 #include <binderwrapper/binder_test_base.h>
@@ -36,19 +39,44 @@ class PowerManagerTest : public BinderTestBase {
         interface_(interface_cast<IPowerManager>(power_manager_)),
         property_setter_(new SystemPropertySetterStub()),
         wake_lock_manager_(new WakeLockManagerStub()) {
+    CHECK(temp_dir_.CreateUniqueTempDir());
+
+    power_state_path_ = temp_dir_.path().Append("power_state");
+    power_manager_->set_power_state_path_for_testing(power_state_path_);
+    ClearPowerState();
+
     power_manager_->set_property_setter_for_testing(
         std::unique_ptr<SystemPropertySetterInterface>(property_setter_));
     power_manager_->set_wake_lock_manager_for_testing(
         std::unique_ptr<WakeLockManagerInterface>(wake_lock_manager_));
+
     CHECK(power_manager_->Init());
   }
   ~PowerManagerTest() override = default;
 
  protected:
+  // Returns the value in |power_state_path_|.
+  std::string ReadPowerState() {
+    std::string state;
+    PCHECK(base::ReadFileToString(power_state_path_, &state))
+        << "Failed to read " << power_state_path_.value();
+    return state;
+  }
+
+  // Clears |power_state_path_|.
+  void ClearPowerState() {
+    PCHECK(base::WriteFile(power_state_path_, "", 0) == 0)
+        << "Failed to write " << power_state_path_.value();
+  }
+
+  base::ScopedTempDir temp_dir_;
   sp<PowerManager> power_manager_;
   sp<IPowerManager> interface_;
   SystemPropertySetterStub* property_setter_;  // Owned by |power_manager_|.
   WakeLockManagerStub* wake_lock_manager_;  // Owned by |power_manager_|.
+
+  // File under |temp_dir_| used in place of /sys/power/state.
+  base::FilePath power_state_path_;
 
  private:
   DISALLOW_COPY_AND_ASSIGN(PowerManagerTest);
@@ -67,6 +95,26 @@ TEST_F(PowerManagerTest, AcquireAndReleaseWakeLock) {
 
   EXPECT_EQ(OK, interface_->releaseWakeLock(binder, 0));
   EXPECT_TRUE(wake_lock_manager_->request_binders().empty());
+}
+
+TEST_F(PowerManagerTest, GoToSleep) {
+  EXPECT_EQ("", ReadPowerState());
+
+  const int kStartTime = base::SysInfo::Uptime();
+  EXPECT_EQ(OK,
+            interface_->goToSleep(kStartTime, 0 /* reason */, 0 /* flags */));
+  EXPECT_EQ(PowerManager::kPowerStateSuspend, ReadPowerState());
+
+  // A request with a timestamp preceding the last resume should be ignored.
+  ClearPowerState();
+  EXPECT_EQ(BAD_VALUE, interface_->goToSleep(kStartTime - 1, 0, 0));
+  EXPECT_EQ("", ReadPowerState());
+
+  // A second attempt with a timestamp occurring after the last
+  // resume should be honored.
+  ClearPowerState();
+  EXPECT_EQ(OK, interface_->goToSleep(base::SysInfo::Uptime(), 0, 0));
+  EXPECT_EQ(PowerManager::kPowerStateSuspend, ReadPowerState());
 }
 
 TEST_F(PowerManagerTest, Reboot) {

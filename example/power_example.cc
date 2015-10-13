@@ -21,6 +21,8 @@
 #include <base/at_exit.h>
 #include <base/logging.h>
 #include <base/message_loop/message_loop.h>
+#include <base/sys_info.h>
+#include <base/time/time.h>
 #include <binderwrapper/binder_wrapper.h>
 #include <chromeos/flag_helper.h>
 #include <nativepower/power_manager_client.h>
@@ -35,7 +37,8 @@ const int kWakeLockSleepSec = 5;
 
 int main(int argc, char *argv[]) {
   DEFINE_string(action, "",
-                "Action to perform (\"reboot\", \"shut_down\", \"wake_lock\")");
+                "Action to perform (\"reboot\", \"shut_down\", \"suspend\", "
+                "\"wake_lock\")");
 
   chromeos::FlagHelper::Init(argc, argv, "Example power-management client.");
   logging::InitLogging(logging::LoggingSettings());
@@ -52,6 +55,11 @@ int main(int argc, char *argv[]) {
   } else if (FLAGS_action == "shut_down") {
     LOG(INFO) << "Requesting shutdown";
     CHECK(client.ShutDown(android::ShutdownReason::DEFAULT));
+  } else if (FLAGS_action == "suspend") {
+    LOG(INFO) << "Requesting suspend";
+    CHECK(client.Suspend(
+        base::TimeDelta::FromMilliseconds(base::SysInfo::Uptime()),
+        android::SuspendReason::APPLICATION, 0 /* flags */));
   } else if (FLAGS_action == "wake_lock") {
     LOG(INFO) << "Creating wake lock";
     std::unique_ptr<android::WakeLock> lock(

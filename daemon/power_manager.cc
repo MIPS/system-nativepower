@@ -16,7 +16,9 @@
 
 #include "power_manager.h"
 
+#include <base/files/file_util.h>
 #include <base/logging.h>
+#include <base/sys_info.h>
 #include <binderwrapper/binder_wrapper.h>
 #include <cutils/android_reboot.h>
 #include <nativepower/constants.h>
@@ -25,11 +27,19 @@
 #include <utils/String8.h>
 
 namespace android {
+namespace {
+
+// Path to real sysfs file that can be written to change the power state.
+const char kDefaultPowerStatePath[] = "/sys/power/state";
+
+}  // namespace
 
 const char PowerManager::kRebootPrefix[] = "reboot,";
 const char PowerManager::kShutdownPrefix[] = "shutdown,";
+const char PowerManager::kPowerStateSuspend[] = "mem";
 
-PowerManager::PowerManager() = default;
+PowerManager::PowerManager()
+    : power_state_path_(kDefaultPowerStatePath) {}
 
 PowerManager::~PowerManager() = default;
 
@@ -42,8 +52,8 @@ bool PowerManager::Init() {
       return false;
   }
 
-  LOG(INFO) << "Registering with service manager as "
-            << kPowerManagerServiceName;
+  LOG(INFO) << "Registering with service manager as \""
+            << kPowerManagerServiceName << "\"";
   return BinderWrapper::Get()->RegisterService(kPowerManagerServiceName, this);
 }
 
@@ -85,8 +95,27 @@ status_t PowerManager::powerHint(int hintId, int data) {
 }
 
 status_t PowerManager::goToSleep(int64_t event_time_ms, int reason, int flags) {
-  NOTIMPLEMENTED() << "goToSleep: event_time_ms=" << event_time_ms
-                   << " reason=" << reason << " flags=" << flags;
+  if (event_time_ms < last_resume_uptime_.InMilliseconds()) {
+    LOG(WARNING) << "Ignoring request to suspend in response to event at "
+                 << event_time_ms << " preceding last resume time "
+                 << last_resume_uptime_.InMilliseconds();
+    return BAD_VALUE;
+  }
+
+  LOG(INFO) << "Suspending immediately for event at " << event_time_ms
+            << " (reason=" << reason << " flags=" << flags << ")";
+  if (base::WriteFile(power_state_path_, kPowerStateSuspend,
+                      strlen(kPowerStateSuspend)) !=
+      static_cast<int>(strlen(kPowerStateSuspend))) {
+    PLOG(ERROR) << "Failed to write \"" << kPowerStateSuspend << "\" to "
+                << power_state_path_.value();
+    return UNKNOWN_ERROR;
+  }
+
+  last_resume_uptime_ =
+      base::TimeDelta::FromMilliseconds(base::SysInfo::Uptime());
+  LOG(INFO) << "Resumed from suspend at "
+            << last_resume_uptime_.InMilliseconds();
   return OK;
 }
 
