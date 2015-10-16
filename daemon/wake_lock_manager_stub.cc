@@ -16,27 +16,46 @@
 
 #include "wake_lock_manager_stub.h"
 
+#include <base/strings/stringprintf.h>
 #include <binder/IBinder.h>
 
 namespace android {
+
+// static
+std::string WakeLockManagerStub::ConstructRequestString(
+    const std::string& tag,
+    const std::string& package,
+    uid_t uid) {
+  return base::StringPrintf("%s,%s,%d", tag.c_str(), package.c_str(), uid);
+}
 
 WakeLockManagerStub::WakeLockManagerStub() = default;
 
 WakeLockManagerStub::~WakeLockManagerStub() = default;
 
+std::string WakeLockManagerStub::GetRequestString(
+    const sp<IBinder>& binder) const {
+  const auto it = requests_.find(binder);
+  if (it == requests_.end())
+    return std::string();
+
+  const Request& req = it->second;
+  return ConstructRequestString(req.tag, req.package, req.uid);
+}
+
 bool WakeLockManagerStub::AddRequest(sp<IBinder> client_binder,
                                      const std::string& tag,
                                      const std::string& package,
-                                     int uid) {
-  request_binders_.insert(client_binder);
+                                     uid_t uid) {
+  requests_[client_binder] = Request(tag, package, uid);
   return true;
 }
 
 bool WakeLockManagerStub::RemoveRequest(sp<IBinder> client_binder) {
-  if (!request_binders_.count(client_binder))
+  if (!requests_.count(client_binder))
     return false;
 
-  request_binders_.erase(client_binder);
+  requests_.erase(client_binder);
   return true;
 }
 

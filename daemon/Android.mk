@@ -18,9 +18,13 @@ LOCAL_PATH := $(call my-dir)
 
 nativepowerman_CommonCFlags := -Wall -Werror -Wno-unused-parameter
 nativepowerman_CommonCFlags += -Wno-sign-promo  # for libchrome
-nativepowerman_CommonCIncludes := $(LOCAL_PATH)/../include
+nativepowerman_CommonCIncludes := \
+  $(LOCAL_PATH)/../include \
+  external/gtest/include \
+
 nativepowerman_CommonSharedLibraries := \
   libbinder \
+  libbinderwrapper \
   libchrome \
   libcutils \
   libpowermanager \
@@ -39,7 +43,6 @@ LOCAL_CFLAGS := $(nativepowerman_CommonCFlags)
 LOCAL_STATIC_LIBRARIES := libnativepowerman
 LOCAL_SHARED_LIBRARIES := \
   $(nativepowerman_CommonSharedLibraries) \
-  libbinderwrapper \
   libchromeos \
   libchromeos-binder \
 
@@ -69,11 +72,10 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := libnativepowerman
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_CFLAGS := $(nativepowerman_CommonCFlags)
-LOCAL_C_INCLUDES := $(nativepowerman_CommonCIncludes) external/gtest/include
+LOCAL_C_INCLUDES := $(nativepowerman_CommonCIncludes)
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/../include
 LOCAL_SHARED_LIBRARIES := \
   $(nativepowerman_CommonSharedLibraries) \
-  libbinderwrapper \
   libchromeos \
 
 LOCAL_SRC_FILES := \
@@ -97,13 +99,12 @@ LOCAL_CFLAGS := $(nativepowerman_CommonCFlags)
 LOCAL_STATIC_LIBRARIES := libnativepowerman libgtest libBionicGtestMain
 LOCAL_SHARED_LIBRARIES := \
   $(nativepowerman_CommonSharedLibraries) \
-  libbinderwrapper \
   libbinderwrapper_test_support \
+  libnativepower_test_support \
 
 LOCAL_SRC_FILES := \
   power_manager_unittest.cc \
   system_property_setter_stub.cc \
-  wake_lock_manager_stub.cc \
   wake_lock_manager_unittest.cc \
 
 include $(BUILD_NATIVE_TEST)
@@ -121,5 +122,7 @@ LOCAL_SHARED_LIBRARIES := $(nativepowerman_CommonSharedLibraries)
 LOCAL_SRC_FILES := \
   BnPowerManager.cc \
   power_manager_stub.cc \
+  wake_lock_manager.cc \
+  wake_lock_manager_stub.cc \
 
 include $(BUILD_SHARED_LIBRARY)

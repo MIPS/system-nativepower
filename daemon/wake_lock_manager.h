@@ -17,6 +17,8 @@
 #ifndef SYSTEM_NATIVEPOWER_DAEMON_WAKE_LOCK_MANAGER_H_
 #define SYSTEM_NATIVEPOWER_DAEMON_WAKE_LOCK_MANAGER_H_
 
+#include <sys/types.h>
+
 #include <map>
 #include <string>
 
@@ -37,8 +39,20 @@ class WakeLockManagerInterface {
   virtual bool AddRequest(sp<IBinder> client_binder,
                           const std::string& tag,
                           const std::string& package,
-                          int uid) = 0;
+                          uid_t uid) = 0;
   virtual bool RemoveRequest(sp<IBinder> client_binder) = 0;
+
+ protected:
+  // Information about a request from a client.
+  struct Request {
+    Request(const std::string& tag, const std::string& package, uid_t uid);
+    Request(const Request& request);
+    Request();
+
+    std::string tag;
+    std::string package;
+    uid_t uid;
+  };
 };
 
 class WakeLockManager : public WakeLockManagerInterface {
@@ -61,21 +75,10 @@ class WakeLockManager : public WakeLockManagerInterface {
   bool AddRequest(sp<IBinder> client_binder,
                   const std::string& tag,
                   const std::string& package,
-                  int uid) override;
+                  uid_t uid) override;
   bool RemoveRequest(sp<IBinder> client_binder) override;
 
  private:
-  // Information about a request from a client.
-  struct Request {
-    Request(const std::string& tag, const std::string& package, int uid);
-    Request(const Request& request);
-    Request();
-
-    std::string tag;
-    std::string package;
-    int uid;
-  };
-
   void HandleBinderDeath(sp<IBinder> binder);
 
   base::FilePath lock_path_;

@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+#include <sys/types.h>
+
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -23,17 +26,21 @@
 
 namespace android {
 
+class WakeLockManagerStub;
+
 // Stub implementation of BnPowerManager for use in tests.
+//
+// The BinderWrapper singleton must be initialized before using this class.
 class PowerManagerStub : public BnPowerManager {
  public:
   PowerManagerStub();
   ~PowerManagerStub() override;
 
   // Constructs a string that can be compared with one returned by
-  // GetLockString().
-  static std::string ConstructLockString(const std::string& tag,
-                                         const std::string& package,
-                                         int uid);
+  // GetWakeLockString().
+  static std::string ConstructWakeLockString(const std::string& tag,
+                                             const std::string& package,
+                                             uid_t uid);
 
   // Constructs a string that can be compared with one returned by
   // GetSuspendRequestString().
@@ -41,7 +48,6 @@ class PowerManagerStub : public BnPowerManager {
                                                    int reason,
                                                    int flags);
 
-  size_t num_locks() const { return locks_.size(); }
   size_t num_suspend_requests() const { return suspend_requests_.size(); }
   const std::vector<std::string>& reboot_reasons() const {
     return reboot_reasons_;
@@ -50,9 +56,12 @@ class PowerManagerStub : public BnPowerManager {
     return shutdown_reasons_;
   }
 
-  // Returns a string describing the lock registered for |binder|, or an empty
-  // string if no lock is present.
-  std::string GetLockString(const sp<IBinder>& binder) const;
+  // Returns the number of currently-registered wake locks.
+  int GetNumWakeLocks() const;
+
+  // Returns a string describing the wake lock registered for |binder|, or an
+  // empty string if no wake lock is present.
+  std::string GetWakeLockString(const sp<IBinder>& binder) const;
 
   // Returns a string describing position |index| in |suspend_requests_|.
   std::string GetSuspendRequestString(size_t index) const;
@@ -83,22 +92,6 @@ class PowerManagerStub : public BnPowerManager {
   status_t crash(const String16& message) override;
 
  private:
-  // Contains information passed to acquireWakeLock() or
-  // acquireWakeLockWithUid().
-  struct LockInfo {
-    LockInfo();
-    LockInfo(const LockInfo& info);
-    LockInfo(const std::string& tag,
-             const std::string& package,
-             int uid);
-
-    std::string tag;
-    std::string package;
-
-    // -1 if acquireWakeLock() was used.
-    int uid;
-  };
-
   // Details about a request passed to goToSleep().
   struct SuspendRequest {
     SuspendRequest(int64 uptime_ms, int reason, int flags);
@@ -108,8 +101,7 @@ class PowerManagerStub : public BnPowerManager {
     int flags;
   };
 
-  using LockInfoMap = std::map<sp<IBinder>, LockInfo>;
-  LockInfoMap locks_;
+  std::unique_ptr<WakeLockManagerStub> wake_lock_manager_;
 
   // Information about calls to goToSleep(), in the order they were made.
   using SuspendRequests = std::vector<SuspendRequest>;

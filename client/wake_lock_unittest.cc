@@ -50,15 +50,17 @@ class WakeLockTest : public BinderTestBase {
 };
 
 TEST_F(WakeLockTest, CreateAndDestroy) {
+  const uid_t kUid = 123;
+  binder_wrapper()->set_calling_uid(kUid);
   std::unique_ptr<WakeLock> lock(client_.CreateWakeLock("foo", "bar"));
-  ASSERT_EQ(1u, power_manager_->num_locks());
+  ASSERT_EQ(1, power_manager_->GetNumWakeLocks());
   ASSERT_EQ(1u, binder_wrapper()->local_binders().size());
   EXPECT_EQ(
-      PowerManagerStub::ConstructLockString("foo", "bar", -1),
-      power_manager_->GetLockString(binder_wrapper()->local_binders()[0]));
+      PowerManagerStub::ConstructWakeLockString("foo", "bar", kUid),
+      power_manager_->GetWakeLockString(binder_wrapper()->local_binders()[0]));
 
   lock.reset();
-  EXPECT_EQ(0u, power_manager_->num_locks());
+  EXPECT_EQ(0, power_manager_->GetNumWakeLocks());
 }
 
 TEST_F(WakeLockTest, PowerManagerDeath) {
@@ -68,7 +70,7 @@ TEST_F(WakeLockTest, PowerManagerDeath) {
   // Since PowerManagerClient was informed that the power manager died, WakeLock
   // shouldn't try to release its lock on destruction.
   lock.reset();
-  EXPECT_EQ(1u, power_manager_->num_locks());
+  EXPECT_EQ(1, power_manager_->GetNumWakeLocks());
 }
 
 }  // namespace android

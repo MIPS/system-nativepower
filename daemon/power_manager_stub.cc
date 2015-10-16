@@ -17,21 +17,13 @@
 #include <base/format_macros.h>
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
+#include <binderwrapper/binder_wrapper.h>
 #include <nativepower/power_manager_stub.h>
 #include <utils/String8.h>
 
+#include "wake_lock_manager_stub.h"
+
 namespace android {
-
-PowerManagerStub::LockInfo::LockInfo() : uid(-1) {}
-
-PowerManagerStub::LockInfo::LockInfo(const LockInfo& info) = default;
-
-PowerManagerStub::LockInfo::LockInfo(const std::string& tag,
-                                     const std::string& package,
-                                     int uid)
-    : tag(tag),
-      package(package),
-      uid(uid) {}
 
 PowerManagerStub::SuspendRequest::SuspendRequest(int64_t event_time_ms,
                                                  int reason,
@@ -41,10 +33,11 @@ PowerManagerStub::SuspendRequest::SuspendRequest(int64_t event_time_ms,
       flags(flags) {}
 
 // static
-std::string PowerManagerStub::ConstructLockString(const std::string& tag,
-                                                  const std::string& package,
-                                                  int uid) {
-  return base::StringPrintf("%s,%s,%d", tag.c_str(), package.c_str(), uid);
+std::string PowerManagerStub::ConstructWakeLockString(
+    const std::string& tag,
+    const std::string& package,
+    uid_t uid) {
+  return WakeLockManagerStub::ConstructRequestString(tag, package, uid);
 }
 
 // static
@@ -55,17 +48,18 @@ std::string PowerManagerStub::ConstructSuspendRequestString(
   return base::StringPrintf("%" PRId64 ",%d,%d", event_time_ms, reason, flags);
 }
 
-PowerManagerStub::PowerManagerStub() = default;
+PowerManagerStub::PowerManagerStub()
+    : wake_lock_manager_(new WakeLockManagerStub()) {}
 
 PowerManagerStub::~PowerManagerStub() = default;
 
-std::string PowerManagerStub::GetLockString(const sp<IBinder>& binder) const {
-  const auto it = locks_.find(binder);
-  if (it == locks_.end())
-    return std::string();
+int PowerManagerStub::GetNumWakeLocks() const {
+  return wake_lock_manager_->num_requests();
+}
 
-  const LockInfo& info = it->second;
-  return ConstructLockString(info.tag, info.package, info.uid);
+std::string PowerManagerStub::GetWakeLockString(
+    const sp<IBinder>& binder) const {
+  return wake_lock_manager_->GetRequestString(binder);
 }
 
 std::string PowerManagerStub::GetSuspendRequestString(size_t index) const {
@@ -82,10 +76,9 @@ status_t PowerManagerStub::acquireWakeLock(int flags,
                                            const String16& tag,
                                            const String16& packageName,
                                            bool isOneWay) {
-  CHECK(!locks_.count(lock)) << "Got acquireWakeLock() request for "
-                             << "already-registered binder " << lock.get();
-  locks_[lock] =
-      LockInfo(String8(tag).string(), String8(packageName).string(), -1);
+  CHECK(wake_lock_manager_->AddRequest(lock, String8(tag).string(),
+                                       String8(packageName).string(),
+                                       BinderWrapper::Get()->GetCallingUid()));
   return OK;
 }
 
@@ -95,19 +88,16 @@ status_t PowerManagerStub::acquireWakeLockWithUid(int flags,
                                                   const String16& packageName,
                                                   int uid,
                                                   bool isOneWay) {
-  CHECK(!locks_.count(lock)) << "Got acquireWakeLockWithUid() request for "
-                             << "already-registered binder " << lock.get();
-  locks_[lock] =
-      LockInfo(String8(tag).string(), String8(packageName).string(), uid);
+  CHECK(wake_lock_manager_->AddRequest(lock, String8(tag).string(),
+                                       String8(packageName).string(),
+                                       static_cast<uid_t>(uid)));
   return OK;
 }
 
 status_t PowerManagerStub::releaseWakeLock(const sp<IBinder>& lock,
                                            int flags,
                                            bool isOneWay) {
-  CHECK(locks_.count(lock)) << "Got releaseWakeLock() request for unregistered "
-                            << "binder " << lock.get();
-  locks_.erase(lock);
+  CHECK(wake_lock_manager_->RemoveRequest(lock));
   return OK;
 }
 

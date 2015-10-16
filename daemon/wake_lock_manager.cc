@@ -51,14 +51,14 @@ const char WakeLockManager::kLockName[] = "nativepowerman";
 
 WakeLockManager::Request::Request(const std::string& tag,
                                   const std::string& package,
-                                  int uid)
+                                  uid_t uid)
     : tag(tag),
       package(package),
       uid(uid) {}
 
 WakeLockManager::Request::Request(const Request& request) = default;
 
-WakeLockManager::Request::Request() : uid(0) {}
+WakeLockManager::Request::Request() : uid(-1) {}
 
 WakeLockManager::WakeLockManager()
     : lock_path_(kLockPath),
@@ -82,7 +82,7 @@ bool WakeLockManager::Init() {
 bool WakeLockManager::AddRequest(sp<IBinder> client_binder,
                                  const std::string& tag,
                                  const std::string& package,
-                                 int uid) {
+                                 uid_t uid) {
   const bool new_request = !requests_.count(client_binder);
   LOG(INFO) << (new_request ? "Adding" : "Updating") << " request for binder "
             << client_binder.get() << ": tag=\"" << tag << "\""

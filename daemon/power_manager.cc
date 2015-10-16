@@ -62,7 +62,10 @@ status_t PowerManager::acquireWakeLock(int flags,
                                        const String16& tag,
                                        const String16& packageName,
                                        bool isOneWay) {
-  return AddWakeLockRequest(lock, tag, packageName, -1) ? OK : UNKNOWN_ERROR;
+  return AddWakeLockRequest(lock, tag, packageName,
+                            BinderWrapper::Get()->GetCallingUid())
+             ? OK
+             : UNKNOWN_ERROR;
 }
 
 status_t PowerManager::acquireWakeLockWithUid(int flags,
@@ -71,7 +74,9 @@ status_t PowerManager::acquireWakeLockWithUid(int flags,
                                               const String16& packageName,
                                               int uid,
                                               bool isOneWay) {
-  return AddWakeLockRequest(lock, tag, packageName, uid) ? OK : UNKNOWN_ERROR;
+  return AddWakeLockRequest(lock, tag, packageName, static_cast<uid_t>(uid))
+             ? OK
+             : UNKNOWN_ERROR;
 }
 
 status_t PowerManager::releaseWakeLock(const sp<IBinder>& lock,

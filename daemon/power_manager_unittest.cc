@@ -88,13 +88,33 @@ TEST_F(PowerManagerTest, RegisterService) {
 }
 
 TEST_F(PowerManagerTest, AcquireAndReleaseWakeLock) {
+  const char kTag[] = "foo";
+  const char kPackage[] = "bar";
   sp<BBinder> binder = binder_wrapper()->CreateLocalBinder();
-  EXPECT_EQ(OK, interface_->acquireWakeLock(0, binder, String16(), String16()));
-  ASSERT_EQ(1u, wake_lock_manager_->request_binders().size());
-  EXPECT_TRUE(wake_lock_manager_->has_request_binder(binder));
+
+  // Check that PowerManager looks up the calling UID when necessary.
+  const uid_t kCallingUid = 100;
+  binder_wrapper()->set_calling_uid(kCallingUid);
+  EXPECT_EQ(OK, interface_->acquireWakeLock(0, binder, String16(kTag),
+                                            String16(kPackage)));
+  EXPECT_EQ(1, wake_lock_manager_->num_requests());
+  EXPECT_EQ(
+      WakeLockManagerStub::ConstructRequestString(kTag, kPackage, kCallingUid),
+      wake_lock_manager_->GetRequestString(
+          binder_wrapper()->local_binders()[0]));
 
   EXPECT_EQ(OK, interface_->releaseWakeLock(binder, 0));
-  EXPECT_TRUE(wake_lock_manager_->request_binders().empty());
+  EXPECT_EQ(0, wake_lock_manager_->num_requests());
+
+  // If a UID is passed, it should be used instead.
+  const uid_t kPassedUid = 200;
+  EXPECT_EQ(OK, interface_->acquireWakeLockWithUid(
+                    0, binder, String16(kTag), String16(kPackage), kPassedUid));
+  EXPECT_EQ(1, wake_lock_manager_->num_requests());
+  EXPECT_EQ(
+      WakeLockManagerStub::ConstructRequestString(kTag, kPackage, kPassedUid),
+      wake_lock_manager_->GetRequestString(
+          binder_wrapper()->local_binders()[0]));
 }
 
 TEST_F(PowerManagerTest, GoToSleep) {

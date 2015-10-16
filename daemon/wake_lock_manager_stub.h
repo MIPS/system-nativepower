@@ -19,6 +19,7 @@
 
 #include <set>
 #include <string>
+#include <sys/types.h>
 
 #include <base/macros.h>
 #include <utils/StrongPointer.h>
@@ -32,26 +33,31 @@ class IBinder;
 // Stub implementation used by tests.
 class WakeLockManagerStub : public WakeLockManagerInterface {
  public:
-  using BinderSet = std::set<sp<IBinder>>;
-
   WakeLockManagerStub();
   ~WakeLockManagerStub() override;
 
-  const BinderSet& request_binders() const { return request_binders_; }
-  bool has_request_binder(const sp<IBinder>& binder) const {
-    return request_binders_.count(binder);
-  }
+  // Constructs a string that can be compared with one returned by
+  // GetRequestString().
+  static std::string ConstructRequestString(const std::string& tag,
+                                            const std::string& package,
+                                            uid_t uid);
+
+  int num_requests() const { return requests_.size(); }
+
+  // Returns a string describing the request associated with |binder|, or an
+  // empty string if no request is present.
+  std::string GetRequestString(const sp<IBinder>& binder) const;
 
   // WakeLockManagerInterface:
   bool AddRequest(sp<IBinder> client_binder,
                   const std::string& tag,
                   const std::string& package,
-                  int uid) override;
+                  uid_t uid) override;
   bool RemoveRequest(sp<IBinder> client_binder) override;
 
  private:
-  // Binders passed to AddRequest() for currently-active requests.
-  BinderSet request_binders_;
+  // Currently-active requests, keyed by client binders.
+  std::map<sp<IBinder>, Request> requests_;
 
   DISALLOW_COPY_AND_ASSIGN(WakeLockManagerStub);
 };
