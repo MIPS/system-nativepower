@@ -22,8 +22,8 @@ libnativepower_CommonCIncludes := $(LOCAL_PATH)/../include
 libnativepower_CommonSharedLibraries := \
   libbinder \
   libbinderwrapper \
+  libbrillo \
   libchrome \
-  libchromeos \
   libpowermanager \
   libutils \
 

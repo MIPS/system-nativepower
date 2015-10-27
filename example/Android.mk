@@ -27,8 +27,8 @@ LOCAL_CFLAGS += -Wno-sign-promo  # for libchrome
 LOCAL_SHARED_LIBRARIES := \
   libbinder \
   libbinderwrapper \
+  libbrillo \
   libchrome \
-  libchromeos \
   libnativepower \
   libpowermanager \
   libutils \

@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-# libchromeos is only built for Linux, so this package is too.
+# libbrillo is only built for Linux, so this package is too.
 ifeq ($(HOST_OS),linux)
 
 include $(call all-subdir-makefiles)

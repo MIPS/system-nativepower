@@ -43,8 +43,8 @@ LOCAL_CFLAGS := $(nativepowerman_CommonCFlags)
 LOCAL_STATIC_LIBRARIES := libnativepowerman
 LOCAL_SHARED_LIBRARIES := \
   $(nativepowerman_CommonSharedLibraries) \
-  libchromeos \
-  libchromeos-binder \
+  libbrillo \
+  libbrillo-binder \
 
 LOCAL_SRC_FILES := main.cc
 
@@ -76,7 +76,7 @@ LOCAL_C_INCLUDES := $(nativepowerman_CommonCIncludes)
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/../include
 LOCAL_SHARED_LIBRARIES := \
   $(nativepowerman_CommonSharedLibraries) \
-  libchromeos \
+  libbrillo \
 
 LOCAL_SRC_FILES := \
   BnPowerManager.cc \
