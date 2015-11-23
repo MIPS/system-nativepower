@@ -14,9 +14,4 @@
 # limitations under the License.
 #
 
-# libbrillo is only built for Linux, so this package is too.
-ifeq ($(HOST_OS),linux)
-
 include $(call all-subdir-makefiles)
-
-endif  # HOST_OS == linux
