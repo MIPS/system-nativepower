@@ -62,7 +62,7 @@ LOCAL_MODULE_PATH := $(PRODUCT_OUT)/$(TARGET_COPY_OUT_INITRCD)
 include $(BUILD_SYSTEM)/base_rules.mk
 
 $(LOCAL_BUILT_MODULE): $(INITRC_TEMPLATE)
-	$(call generate-initrc-file,nativepowerman,,)
+	$(call generate-initrc-file,nativepowerman,,wakelock)
 endif
 
 # libnativepowerman client library (for daemon and tests)
