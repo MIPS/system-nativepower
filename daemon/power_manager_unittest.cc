@@ -120,7 +120,7 @@ TEST_F(PowerManagerTest, AcquireAndReleaseWakeLock) {
 TEST_F(PowerManagerTest, GoToSleep) {
   EXPECT_EQ("", ReadPowerState());
 
-  const int kStartTime = base::SysInfo::Uptime();
+  const int64_t kStartTime = base::SysInfo::Uptime().InMilliseconds();
   EXPECT_EQ(OK,
             interface_->goToSleep(kStartTime, 0 /* reason */, 0 /* flags */));
   EXPECT_EQ(PowerManager::kPowerStateSuspend, ReadPowerState());
@@ -133,7 +133,9 @@ TEST_F(PowerManagerTest, GoToSleep) {
   // A second attempt with a timestamp occurring after the last
   // resume should be honored.
   ClearPowerState();
-  EXPECT_EQ(OK, interface_->goToSleep(base::SysInfo::Uptime(), 0, 0));
+  EXPECT_EQ(
+      OK,
+      interface_->goToSleep(base::SysInfo::Uptime().InMilliseconds(), 0, 0));
   EXPECT_EQ(PowerManager::kPowerStateSuspend, ReadPowerState());
 }
 

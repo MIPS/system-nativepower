@@ -117,8 +117,7 @@ status_t PowerManager::goToSleep(int64_t event_time_ms, int reason, int flags) {
     return UNKNOWN_ERROR;
   }
 
-  last_resume_uptime_ =
-      base::TimeDelta::FromMilliseconds(base::SysInfo::Uptime());
+  last_resume_uptime_ = base::SysInfo::Uptime();
   LOG(INFO) << "Resumed from suspend at "
             << last_resume_uptime_.InMilliseconds();
   return OK;

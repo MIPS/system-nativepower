@@ -94,9 +94,9 @@ class PowerManagerStub : public BnPowerManager {
  private:
   // Details about a request passed to goToSleep().
   struct SuspendRequest {
-    SuspendRequest(int64 uptime_ms, int reason, int flags);
+    SuspendRequest(int64_t uptime_ms, int reason, int flags);
 
-    int64 event_time_ms;
+    int64_t event_time_ms;
     int reason;
     int flags;
   };
