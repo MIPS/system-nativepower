@@ -57,9 +57,8 @@ int main(int argc, char *argv[]) {
     CHECK(client.ShutDown(android::ShutdownReason::DEFAULT));
   } else if (FLAGS_action == "suspend") {
     LOG(INFO) << "Requesting suspend";
-    CHECK(client.Suspend(
-        base::TimeDelta::FromMilliseconds(base::SysInfo::Uptime()),
-        android::SuspendReason::APPLICATION, 0 /* flags */));
+    CHECK(client.Suspend(base::SysInfo::Uptime(),
+                         android::SuspendReason::APPLICATION, 0 /* flags */));
   } else if (FLAGS_action == "wake_lock") {
     LOG(INFO) << "Creating wake lock";
     std::unique_ptr<android::WakeLock> lock(

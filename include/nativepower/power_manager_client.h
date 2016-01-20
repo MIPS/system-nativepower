@@ -79,10 +79,9 @@ class PowerManagerClient {
   // Suspends the system immediately, returning true on success.
   //
   // |event_uptime| contains the time since the system was booted (e.g.
-  // base::TimeDelta::FromMilliseconds(base::SysInfo::Uptime())) of the event
-  // that triggered the suspend request. It is used to avoid acting on stale
-  // suspend requests that are sent before the currently-active suspend request
-  // completes.
+  // base::SysInfo::Uptime()) of the event that triggered the suspend request.
+  // It is used to avoid acting on stale suspend requests that are sent before
+  // the currently-active suspend request completes.
   // |reason| is currently only used by android.view.WindowManagerPolicy.
   // |flags| is a bitfield of SuspendFlag values.
   bool Suspend(base::TimeDelta event_uptime, SuspendReason reason, int flags);
