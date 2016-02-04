@@ -49,7 +49,7 @@ include $(BUILD_SHARED_LIBRARY)
 include $(CLEAR_VARS)
 LOCAL_MODULE := libnativepower_tests
 ifdef BRILLO
-  LOCAL_MODULE_TAGS := debug
+  LOCAL_MODULE_TAGS := eng
 endif
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_CFLAGS := $(libnativepower_CommonCFlags)
